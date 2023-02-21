@@ -11,7 +11,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.s
 // Winner to be selected every x minutes -> completely automate
 // Chainlink Oracle -> Randomness, Automated  Execution (Chainlink Keepers)
 
-error Raffle__NotEnoughETHEntered();
+error Raffle__SendMoreToEnterRaffle();
 error Raffle__TransferFailed();
 error Raffle__NotOpen();
 error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
@@ -52,7 +52,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     event WinnerPicked(address indexed winner);
 
     constructor(
-        address vrfCoordinatorV2,
+        address vrfCoordinatorV2, // contract
         uint256 entranceFee,
         bytes32 gasLane,
         uint64 subscriptionId,
@@ -72,7 +72,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     /* functions */
     function enterRaffle() public payable {
         if (msg.value < i_entranceFee) {
-            revert Raffle__NotEnoughETHEntered();
+            revert Raffle__SendMoreToEnterRaffle();
         }
         if (s_raffleState != RaffleState.OPEN) {
             revert Raffle__NotOpen();
@@ -89,7 +89,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         bool hasPlayers = (s_players.length > 0);
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
-        return (upkeepNeeded, "");
+        return (upkeepNeeded, "0x0");
     }
 
     function performUpkeep(bytes calldata /* performData */) external {
@@ -135,6 +135,10 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         return i_entranceFee;
     }
 
+    function getInterval() public view returns (uint256) {
+        return i_interval;
+    }
+
     function getPlayer(uint256 index) public view returns (address) {
         return s_players[index];
     }
@@ -155,7 +159,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         return s_players.length;
     }
 
-    function getLatestTimeStamp() public view returns (uint256) {
+    function getLastTimeStamp() public view returns (uint256) {
         return s_lastTimeStamp;
     }
 
